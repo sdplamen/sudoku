@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+body {
+    font-family: Montserrat, sans-serif;
+    text-align: center;
+}
+
+.col-header-row {
+    width: 276px;
+    margin: 0 auto;
+    display: flex;
+    font-weight: bold;
+}
+.col-header-cell {
+    width: 30px;
+}
+
+.row-label-column {
+    width: 30px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    left: -150px;
+    top: -270px;
+}
+.row-label-cell {
+    height: 30px;
+    line-height: 30px;
+    font-weight: bold;
+}
+
+.grid {
+    display: inline-grid;
+    grid-template-columns: repeat(9, 30px);
+    border: 2px solid black;
+    margin-bottom: 20px;
+}
+.cell {
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    border: 1px solid #ccc;
+    text-align: center;
+    font-size: 1.2em;
+    padding: 0;
+    margin: 0;
+}
+
+.original {
+    font-weight: bold;
+    color: darkblue;
+}
+.empty {
+    color: #aaa;
+}
+.solved {
+    background-color: lightgreen;
+}
+
+.message {
+    color: green;
+    font-weight: bold;
+}
+.error {
+    color: red;
+    font-weight: bold;
+}
