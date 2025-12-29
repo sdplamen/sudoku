@@ -1,102 +1,118 @@
-from django.shortcuts import render, redirect
-from .game_logic import SudokuGrid, load_puzzles, COL_LABELS, DISPLAY_EMPTY
-import random
-
-# Create your views here.
-GAME_SESSION_KEY = 'sudoku_game'
-
-def get_or_create_grid(request):
-    if GAME_SESSION_KEY not in request.session:
-        try:
-            puzzles = load_puzzles()
-        except FileNotFoundError as e:
-            return None, str(e)
-
-        puzzle_string = random.choice(puzzles)
-        grid = SudokuGrid(puzzle_string)
-
-        request.session[GAME_SESSION_KEY] = grid.original_setup_str
-
-    original_setup = request.session.get(GAME_SESSION_KEY)
-    grid = SudokuGrid(original_setup)
-
-    active_grid_data = request.session.get('active_grid_data')
-    if active_grid_data:
-        grid.grid = active_grid_data
-
-    return grid, None
+from django.contrib import messages
+from django.shortcuts import render, redirect, get_object_or_404
+from .models import Grid
+from .forms import SudokuForm, LevelForm
+from .sudoku import solve, is_valid_input
+from random import choice
 
 
-def sudoku_view(request):
-    if 'sudoku_setup' not in request.session:
-        return new_game(request)
-
-    original_setup_str = request.session['sudoku_setup']
-    active_grid_data = request.session['sudoku_active_grid']
-    grid_obj = SudokuGrid(original_setup_str)
-    grid_obj.grid = active_grid_data
-
-    message = request.session.pop('message', '')
-
+def start(request):
     if request.method == 'POST':
-        action = request.POST.get('action', '').upper()
+        level_form = LevelForm(request.POST)
+        if level_form.is_valid():
+            level = level_form.cleaned_data.get('level').lower()
+            queryset = Grid.objects.filter(difficulty=level)
 
-        if action in ('RESET', 'NEW', 'UNDO', 'ORIGINAL', 'QUIT'):
-            if action == 'RESET':
-                grid_obj.reset_grid()
-                request.session['message'] = "Grid has been reset."
-            elif action == 'NEW':
-                return redirect('sudoku_new')
-            elif action == 'UNDO':
-                request.session['message'] = "UNDO command is not yet fully implemented for session state."
+            if queryset.exists():
+                random_grid = choice(queryset)
+                return redirect('to_solve', id=random_grid.id)
+            else:
+                error = f'No {level} puzzles found in database.'
+                return render(request, 'start.html', {'level_form': level_form, 'error': error})
 
-        else:
-            try:
-                space, number = action.split()
-                column, row = space
-
-                if column not in COL_LABELS or not (1 <= int(row) <= 9) or not (1 <= int(number) <= 9):
-                    request.session['message'] = "Invalid move format or value."
-                elif grid_obj.make_move(column, row, number) == False:
-                    request.session['message'] = "Cannot overwrite an original number."
-                else:
-                    request.session['message'] = f"Moved {number} to {column}{row}."
-            except:
-                request.session['message'] = "Invalid input. Please use format like B4 9 or a command."
-
-        request.session['sudoku_active_grid'] = grid_obj.grid
-        return redirect('sudoku_board')
-
-    is_solved = grid_obj.is_solved()
-    if is_solved:
-        message = "Congratulations! You solved the puzzle!"
-
-    context = {
-        'grid_data': grid_obj.grid,
-        'col_labels': COL_LABELS,
-        'row_labels': range(1, 10),
-        'display_empty': DISPLAY_EMPTY,
-        'is_solved': is_solved,
-        'message': message,
-    }
-    return render(request, 'index.html', context)
+    level_form = LevelForm()
+    return render(request, 'start.html', {'level_form': level_form})
 
 
-def new_game(request):
-    # try:
-    puzzles = load_puzzles()
-    if not puzzles :
-        raise ValueError("Puzzle file is empty or contains no valid puzzles.")
+def new(request):
+    if request.method == 'POST':
+        form = SudokuForm(request.POST)
+        if form.is_valid():
+            data = form.cleaned_data
+            selected_difficulty = data.get('difficulty')
 
-    puzzle_string = random.choice(puzzles)
+            grid_dict = {f"{r}{c}": data.get(f"{r}{c}") or "." for r in "ABCDEFGHI" for c in "123456789"}
+            grid_string = "".join(grid_dict.values())
 
-    # except (FileNotFoundError, ValueError) as e:
-    #     return render(request, 'game/sudoku_error.html', {'error_message' :str(e)})
+            if not is_valid_input(grid_dict):
+                messages.error(request, "Invalid Grid: Duplicate numbers found in a row, column, or block!")
+                return render(request, 'new.html', {'form' :form})
 
-    new_grid = SudokuGrid(puzzle_string)
+            solution = solve(grid_string)
+            if not solution:
+                messages.error(request, "This puzzle has no possible solution!")
+                return render(request, 'new.html', {'form' :form})
 
-    request.session['sudoku_setup'] = new_grid.original_setup_str
-    request.session['sudoku_active_grid'] = new_grid.grid
-    request.session['message'] = "New game started!"
+            new_grid = Grid.objects.create(
+                grid=grid_string,
+                difficulty=selected_difficulty,
+            )
+            return redirect('to_solve', id=new_grid.id)
+    else:
+        form = SudokuForm()
 
-    return redirect('sudoku_board')
+    return render(request, 'new.html', {'form': form})
+
+
+def to_solve(request, id):
+    grid_obj = get_object_or_404(Grid, pk=id)
+    initial_data = {}
+    rows, cols = "ABCDEFGHI", "123456789"
+    for i, char in enumerate(grid_obj.grid) :
+        if char != '':
+            field_name = f"{rows[i // 9]}{cols[i % 9]}"
+            initial_data[field_name] = char
+    form = SudokuForm(initial=initial_data)
+
+    return render(request, 'solve.html', {
+        'id': grid_obj.id,
+        'form': form,
+        'description': grid_obj
+    })
+
+
+def check_solution(request, id):
+    grid_obj = get_object_or_404(Grid, pk=id)
+    solution = solve(grid_obj.grid)
+
+    wrong_cells = []
+    if request.method == 'POST':
+        for key in solution.keys():
+            user_val = request.POST.get(key)
+            if user_val and user_val != solution[key]:
+                wrong_cells.append(key)
+
+    form = SudokuForm(request.POST)
+    return render(request, 'solve.html', {
+        'id': id,
+        'form': form,
+        'wrong_cells': wrong_cells,
+        'description': grid_obj
+    })
+
+def solved(request, id):
+    grid_obj = get_object_or_404(Grid, pk=id)
+    solved_grid = solve(grid_obj.grid)
+
+    time_taken_seconds = request.POST.get('time_taken', 0)
+    minutes = int(time_taken_seconds) // 60
+    seconds = int(time_taken_seconds) % 60
+    time_str = f'{minutes}m {seconds}s'
+
+    if not solved_grid:
+        return render(request, 'solve.html', {'id': id, 'error': 'Unsolvable!'})
+
+    return render(request, 'solved.html', {
+        'grid': solved_grid,
+        'original': grid_obj,
+        'time_spent': time_str
+    })
+
+
+def clear_grids(request):
+    if request.method == 'POST':
+        Grid.objects.all().delete()
+        messages.success(request, 'Database cleared successfully!')
+        return redirect('start')
+
+    return render(request, 'start.html')

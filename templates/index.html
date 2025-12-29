@@ -1,87 +1,15 @@
-<!doctype html>
 {% load static %}
-{% load game_filters %}
+<!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Sudoku Game</title>
+  <head>
+    <meta charset="utf-8">
+    <title>Sudoku Solver</title>
     <link rel="stylesheet" href="{% static 'style.css' %}">
-</head>
-<body>
-    <h1>Django Sudoku</h1>
-    {% if message %}
-        <p class="message">{{ message }}</p>
-    {% endif %}
-
-    {% if is_solved %}
-        <p class="solved">Puzzle SOLVED!</p>
-    {% endif %}
-
-    <div class="col-header-row">
-        {% for col_label in col_labels %}
-            <div class="col-header-cell">{{ col_label }}</div>
-        {% endfor %}
-    </div>
-
-    <div class="grid">
-        {% for row_index in row_labels %}
-            {% for col_index in row_labels %}
-                {% with r=forloop.parentloop.counter0 c=forloop.counter0 %}
-                    {% with cell_value=grid_data|index:r|index:c %}
-
-                        {% if cell_value == '0' %}
-                            {% with display_value=display_empty cell_class='empty' %}
-                            {% endwith %}
-                        {% else %}
-                            {% with display_value=cell_value %}
-                                {% if original_setup_str|index_flat:r|index_flat:c != '0' %}
-                                    {% with cell_class='original' %}
-                                    {% endwith %}
-                                {% else %}
-                                    {% with cell_class='' %}
-                                    {% endwith %}
-                                {% endif %}
-                            {% endwith %}
-                        {% endif %}
-
-                        <div class="cell {{ cell_class }}"
-                             style="
-                                {% if r == 2 or r == 5 %} border-bottom-width: 3px !important; {% endif %}
-                                {% if c == 2 or c == 5 %} border-right-width: 3px !important; {% endif %}
-                             ">
-                            {{ display_value }}
-                        </div>
-                    {% endwith %}
-                {% endwith %}
-            {% endfor %}
-        {% endfor %}
-    </div>
-
-    <div class="row-label-column">
-        {% for r in row_labels %}
-            <div class="row-label-cell">{{ r }}</div>
-        {% endfor %}
-    </div>
-
-    <form method="post" action="{% url 'sudoku_board' %}">
-        {% csrf_token %}
-        <p>
-            Enter Move (e.g., B4 9) or Command (RESET, NEW, UNDO):<br>
-            <input type="text" name="action" placeholder="B4 9" required>
-            <button type="submit">Submit</button>
-        </p>
-        <p>
-            <button type="submit" name="action" value="NEW">New Game</button>
-            <button type="submit" name="action" value="RESET">Reset Board</button>
-        </p>
-    </form>
-
-    <p>
-        <a href="https://en.wikipedia.org/wiki/Sudoku" target="_blank">Rules of Sudoku</a>
-    </p>
-
-    </body>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+    {% block title %}
+    {% endblock %}
+    {% block body %}
+    {% endblock %}
 </html>

@@ -1,0 +1,38 @@
+{% extends 'index.html' %}
+
+{% block body %}
+<div class="container" align="center">
+    <div class="jumbotron">
+        <h1>Sudoku Game</h1>
+        <p>Choose a difficulty to start a random puzzle from our database.</p>
+    </div>
+
+    <form method="POST" action="{% url 'start' %}">
+        {% csrf_token %}
+        <div class="row justify-content-center">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label for="id_level">Select Difficulty:</label>
+                    {{ level_form.level }}
+                </div>
+                <button type="submit" class="btn btn-primary btn-lg mt-2">Choose & Play</button>
+            </div>
+        </div>
+    </form>
+
+    <hr>
+
+    <div class="mt-4">
+        <p>Or create your own puzzle:</p>
+        <a href="{% url 'new' %}" class="btn btn-success">Enter New Grid</a>
+    </div>
+    <hr>
+    <div class="mt-5 p-3 border border-danger">
+        <h3>Developer Tools</h3>
+        <form method="POST" action="{% url 'clear_grids' %}" onsubmit="return confirm('Are you sure you want to delete all puzzles?');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger">Wipe All Database Records</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

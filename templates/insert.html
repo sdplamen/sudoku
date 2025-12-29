@@ -1,0 +1,27 @@
+{% load form_extras %}
+<form method="POST" action="{% url 'new' %}">
+    {% csrf_token %}
+    <table class="board">
+        <tr>
+            <td class="first_index"></td>
+            {% for i in "123456789" %}
+                <td class="top_index">{{ i }}</td>
+            {% endfor %}
+        </tr>
+
+        {% for row_char in "ABCDEFGHI" %}
+        <tr>
+            <td class="left_index">{{ row_char }}</td>
+            {% for col_num in "123456789" %}
+                {% with field_name=row_char|add:col_num %}
+                    <td class="{% if col_num in '36' %}right{% endif %} {% if row_char in 'CF' %}bottom{% endif %} {% if col_num in '36' and row_char in 'CF' %}rb{% endif %}">
+                        {{ form|get_field:field_name }}
+                    </td>
+                {% endwith %}
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <button type="submit" class="btn btn-primary">Insert</button>
+</form>

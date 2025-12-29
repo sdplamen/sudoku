@@ -1,0 +1,23 @@
+{% extends 'index.html' %}
+
+{% block title %}
+    <div class="container" align="center">
+        <div class="jumbotron">
+          <h1>Here is your Sudoku Solved</h1>
+        </div>
+    </div>
+    <br>
+{% endblock %}
+
+{% block body %}
+  <div class="container" align="center">
+    {% include 'grid.html' with grid=grid %}
+    <h3>Success! You solved it in {{ time_spent }}!</h3>
+    <div class="mt-4">
+      <p>Do you want to play again?</p>
+      <a href="{% url 'start' %}">
+        <button id='brestart' type="button" class="btn btn-success btn-lg">Yes, New Game</button>
+      </a>
+    </div>
+  </div>
+{% endblock %}
