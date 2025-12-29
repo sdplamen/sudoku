@@ -1,4 +1,4 @@
-## Django Sudoku Solver & Game
+# Django Sudoku Solver & Game
 - A full-stack Sudoku web application built with Django. Users can play puzzles from a database, enter their own custom grids, and use a built-in recursive backtracking solver to check their work or see the final solution.
 
 # 🚀 Features
@@ -24,7 +24,7 @@ Responsive Design: Styled with custom CSS to feature thick 3x3 grid boundaries f
 - cd sudoku
 - Set up a virtual environment:
 - python -m venv venv
-- On MAC: source venv/bin/activate  
+- On MAC: source venv/bin/activate
 - On Windows: venv\Scripts\activate
 - Install dependencies:
 - pip install -r requirements.txt
