@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-8q#^b!s*3doc*ip%58oy-et05dz4awiy^irwbwnso_x=n1nxgd
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1','localhost','sudoku-solver.onrender.com']
+ALLOWED_HOSTS = ['127.0.0.1','localhost','sudoku-solver-o0mk.onrender.com']
 
 
 # Application definition
