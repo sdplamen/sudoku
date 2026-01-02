@@ -1,91 +1,53 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
 
-html{
-  font-family: Montserrat sans-serif;
-}
-
-td{
-  height: 50px;
-  width: 50px;
-  text-align: center;
-  border: 2px solid black;
-  font-size: 25px;
-  padding: 0;
+* {
   box-sizing: border-box;
 }
 
-.first_index{
-  border-right: 5px solid transparent;
-  border-left: 5px solid transparent;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
+html {
+  font-family: 'Montserrat', sans-serif;
 }
 
-.top_index{
-  border-right: 5px solid transparent;
-  border-left: 5px solid transparent;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid black;
-  font-size: 20px;
-}
-
-.left_index{
-  border-right: 5px solid black;
-  border-left: 5px solid transparent;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  font-size: 20px;
-}
-
-.board{
+.board {
+  border: 5px solid black;
   border-collapse: collapse;
   table-layout: fixed;
-  width: 450px;
-  height: 450px;
-  margin: 0 auto;
-  border: 5px solid black;
-  padding: 5px;
 }
 
-.right{
-  border-right: 5px solid black;
-}
-
-.bottom{
-  border-bottom: 5px solid black;
-}
-
-.rb{
-  border-right: 5px solid black;
-  border-bottom: 5px solid black;
-}
-
-input{
-  border-top-style: hidden;
-  border-right-style: hidden;
-  border-left-style: hidden;
-  border-bottom-style: hidden;
-}
-
-.cell{
-  display: block;
-  width: 100%;
-  height: 100%;
-  border: none;
-  margin: 0;
-  padding: 0;
+td {
+  height: 50px;
+  width: 50px;
   text-align: center;
-  font-size: 24px;
-  line-height: 50px;
-  cursor: pointer;
-  background-color: transparent;
+  border: 1px solid #ccc;
+  padding: 0;
+  font-size: 25px;
 }
 
-.cell:focus{
+.right { border-right: 5px solid black !important; }
+.bottom { border-bottom: 5px solid black !important; }
+.cell {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  font-size: 25px;
+  text-align: center;
+  font-family: 'Montserrat', sans-serif;
+}
+
+input.cell {
   outline: none;
+  border-radius: 0;
 }
 
-.is-invalid {
+.cell:focus {
+  background-color: #f0f7ff;
+}
+
+.is-invalid, .is-invalid input {
   background-color: #ffcccc !important;
   color: red !important;
   font-weight: bold;
