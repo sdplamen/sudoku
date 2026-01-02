@@ -68,10 +68,17 @@ input{
 }
 
 .cell{
-  height: 45px;
-  width: 45px;
-  font-size: 25px ;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: none;
+  margin: 0;
+  padding: 0;
   text-align: center;
+  font-size: 24px;
+  line-height: 50px;
+  cursor: pointer;
+  background-color: transparent;
 }
 
 .cell:focus{
