@@ -10,6 +10,8 @@ td{
   text-align: center;
   border: 2px solid black;
   font-size: 25px;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .first_index{
@@ -36,6 +38,11 @@ td{
 }
 
 .board{
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 450px;
+  height: 450px;
+  margin: 0 auto;
   border: 5px solid black;
   padding: 5px;
 }
