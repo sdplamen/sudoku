@@ -71,6 +71,11 @@ input{
   outline: none;
 }
 
+.is-valid {
+    background-color: #d4edda !important;
+    color: #155724 !important;
+}
+
 .is-invalid {
   background-color: #ffcccc !important;
   color: red !important;

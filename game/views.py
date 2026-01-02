@@ -116,3 +116,44 @@ def clear_grids(request):
         return redirect('start')
 
     return render(request, 'start.html')
+
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import GridSerializer
+
+
+class SudokuListCreateAPI(APIView) :
+    # GET: Get a random puzzle by difficulty (Replaces 'start' logic)
+    def get(self, request) :
+        level = request.query_params.get('level', 'easy').lower()
+        queryset = Grid.objects.filter(difficulty=level)
+        if queryset.exists() :
+            grid = choice(queryset)
+            serializer = GridSerializer(grid)
+            return Response(serializer.data)
+        return Response({"error" :"No puzzles found"}, status=status.HTTP_404_NOT_FOUND)
+
+    # POST: Create a new puzzle (Replaces 'new' logic)
+    def post(self, request) :
+        serializer = GridSerializer(data=request.data)
+        if serializer.is_valid() :
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SudokuSolveAPI(APIView) :
+    def post(self, request, pk) :
+        grid_obj = get_object_or_404(Grid, pk=pk)
+        solution = solve(grid_obj.grid)
+        user_input = request.data.get('grid_input')
+
+        wrong_cells = [k for k, v in user_input.items() if v and v != solution.get(k)]
+
+        return Response({
+            "is_correct" :len(wrong_cells) == 0 and "." not in user_input.values(),
+            "wrong_cells" :wrong_cells,
+            "solution" :solution if request.data.get('reveal') else None
+        })
