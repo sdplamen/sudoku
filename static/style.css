@@ -85,7 +85,7 @@ input{
   font-weight: bold;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 600px) {
   td {
     height: 50px;
     width: 50px;
@@ -103,7 +103,7 @@ input{
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 400px) {
   td {
     height: 20px;
     width: 20px;
