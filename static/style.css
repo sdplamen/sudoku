@@ -8,49 +8,51 @@ td{
   height: 50px;
   width: 50px;
   text-align: center;
-  border: 2px solid black;
-  font-size: 25px;
+  border: 1px solid black;
+  font-size: 18px;
 }
 
 .first_index{
-  border-right: 5px solid transparent;
-  border-left: 5px solid transparent;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
+  border-right: 3px solid transparent;
+  border-left: 3px solid transparent;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
 }
 
 .top_index{
-  border-right: 5px solid transparent;
-  border-left: 5px solid transparent;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid black;
+  border-right: 3px solid transparent;
+  border-left: 3px solid transparent;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid black;
   font-size: 20px;
 }
 
 .left_index{
-  border-right: 5px solid black;
-  border-left: 5px solid transparent;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
+  border-right: 3px solid black;
+  border-left: 3px solid transparent;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
   font-size: 20px;
 }
 
 .board{
-  border: 5px solid black;
-  padding: 5px;
+  border: 3px solid black;
+  padding: 3px;
+  margin: 0 auto;
+  max-width: fit-content;
 }
 
 .right{
-  border-right: 5px solid black;
+  border-right: 3px solid black;
 }
 
 .bottom{
-  border-bottom: 5px solid black;
+  border-bottom: 3px solid black;
 }
 
 .rb{
-  border-right: 5px solid black;
-  border-bottom: 5px solid black;
+  border-right: 3px solid black;
+  border-bottom: 3px solid black;
 }
 
 input{
@@ -61,10 +63,11 @@ input{
 }
 
 .cell{
-  height: 45px;
-  width: 45px;
-  font-size: 25px ;
+  width: 95%;
+  height: 95%;
+  font-size: 25px;
   text-align: center;
+  background: transparent;
 }
 
 .cell:focus{
@@ -80,4 +83,36 @@ input{
   background-color: #ffcccc !important;
   color: red !important;
   font-weight: bold;
+}
+
+@media (max-width: 600px) {
+  td {
+    height: 50%;
+    width: 50%;
+    font-size: 18px;
+  }
+
+  .cell {
+    height: 30px;
+    width: 30px;
+    font-size: 18px;
+  }
+
+  .top_index, .left_index {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 400px) {
+  td {
+    height: 20%;
+    width: 20%;
+    font-size: 12px;
+  }
+
+  .cell {
+    height: 25px;
+    width: 25px;
+    font-size: 12px;
+  }
 }

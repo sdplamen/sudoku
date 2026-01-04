@@ -7,8 +7,7 @@
 - Intelligent Solver: Uses a recursive backtracking algorithm to solve any valid Sudoku puzzle instantly.
 - Live Timer: Track your solving speed with an integrated JavaScript timer.
 - "Check My Work": Highlights incorrect entries in red without revealing the full solution.
-
-Responsive Design: Styled with custom CSS to feature thick 3x3 grid boundaries for a classic Sudoku look and feel.
+- Responsive Design: Styled with custom CSS to feature thick 3x3 grid boundaries for a classic Sudoku look and feel.
 
 ## 🛠️ Tech Stack
 - Backend: Python 3.13, Django 5.2.7
