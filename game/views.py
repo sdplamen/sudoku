@@ -13,7 +13,7 @@ from random import choice
 
 @require_http_methods(["POST"])
 def validate_grid_input(request) :
-    try:
+    try :
         data = json.loads(request.body)
         grid_data = data.get('grid_data', {})
 
@@ -95,7 +95,7 @@ def validate_grid_input(request) :
 
 @require_http_methods(["POST"])
 def validate_solution_progress(request, id) :
-    try:
+    try :
         grid_obj = get_object_or_404(Grid, pk=id)
         solution = solve(grid_obj.grid)
 
@@ -121,6 +121,7 @@ def validate_solution_progress(request, id) :
 
             if user_val :
                 filled_count += 1
+                # Only validate user-entered cells (not initial cells)
                 if key not in initial_cells :
                     if user_val != solution[key] :
                         wrong_cells.append(key)
@@ -160,6 +161,7 @@ def get_progress_message(wrong_count, is_complete) :
         return f'{wrong_count} incorrect cell(s)'
     else :
         return ''
+
 def start(request):
     if request.method == 'POST':
         level_form = LevelForm(request.POST)
@@ -176,7 +178,6 @@ def start(request):
 
     level_form = LevelForm()
     return render(request, 'start.html', {'level_form': level_form})
-
 
 def new(request):
     if request.method == 'POST' :
