@@ -19,12 +19,14 @@
 {#                {% endif %}#}
             <td class="{% if col in '36' %}right{% endif %} {% if row in 'CF' %}bottom{% endif %}">
                 {% if form %}
+                    {# Display form field (for solve.html) #}
                     {% with field=form|get_field:key %}
                         {{ field }}
                     {% endwith %}
+                {% elif grid %}
+                    {# Display solved value (for solved.html) #}
+                    <input type="text" class="cell" value="{{ grid|get_item:key }}" readonly>
                 {% endif %}
-            </td>
-
             </td>
             {% endwith %}
         {% endfor %}

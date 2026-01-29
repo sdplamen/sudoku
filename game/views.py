@@ -179,21 +179,21 @@ def start(request):
 
 
 def new(request):
-    if request.method == 'POST':
+    if request.method == 'POST' :
         form = SudokuForm(request.POST)
-        if form.is_valid():
+        if form.is_valid() :
             data = form.cleaned_data
             selected_difficulty = data.get('difficulty')
 
-            grid_dict = {f"{r}{c}": data.get(f"{r}{c}") or "." for r in "ABCDEFGHI" for c in "123456789"}
+            grid_dict = {f"{r}{c}" :data.get(f"{r}{c}") or "." for r in "ABCDEFGHI" for c in "123456789"}
             grid_string = "".join(grid_dict.values())
 
-            if not is_valid_input(grid_dict):
+            if not is_valid_input(grid_dict) :
                 messages.error(request, "Invalid Grid: Duplicate numbers found in a row, column, or block!")
                 return render(request, 'new.html', {'form' :form})
 
             solution = solve(grid_string)
-            if not solution:
+            if not solution :
                 messages.error(request, "This puzzle has no possible solution!")
                 return render(request, 'new.html', {'form' :form})
 
@@ -201,11 +201,12 @@ def new(request):
                 grid=grid_string,
                 difficulty=selected_difficulty,
             )
+            messages.success(request, f"Puzzle created successfully! ID: {new_grid.id}")
             return redirect('to_solve', id=new_grid.id)
-    else:
+    else :
         form = SudokuForm()
 
-    return render(request, 'new.html', {'form': form})
+    return render(request, 'new.html', {'form' :form})
 
 
 def to_solve(request, id):
@@ -230,36 +231,48 @@ def check_solution(request, id):
     solution = solve(grid_obj.grid)
 
     wrong_cells = []
-    if request.method == 'POST':
-        for key in solution.keys():
+    correct_cells = []
+
+    if request.method == 'POST' :
+        for key in solution.keys() :
             user_val = request.POST.get(key)
-            if user_val and user_val != solution[key]:
-                wrong_cells.append(key)
+            if user_val :
+                if user_val != solution[key] :
+                    wrong_cells.append(key)
+                else :
+                    correct_cells.append(key)
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest' :
+            return JsonResponse({
+                'wrong_cells' :wrong_cells,
+                'correct_cells' :correct_cells,
+                'is_complete' :len(wrong_cells) == 0 and len(correct_cells) == 81
+            })
 
     form = SudokuForm(request.POST)
     return render(request, 'solve.html', {
-        'id': id,
-        'form': form,
-        'wrong_cells': wrong_cells,
-        'description': grid_obj
+        'id' :id,
+        'form' :form,
+        'wrong_cells' :wrong_cells,
+        'description' :grid_obj
     })
 
 def solved(request, id):
     grid_obj = get_object_or_404(Grid, pk=id)
     solved_grid = solve(grid_obj.grid)
 
-    time_taken_seconds = request.POST.get('time_taken', 0)
-    minutes = int(time_taken_seconds) // 60
-    seconds = int(time_taken_seconds) % 60
+    time_taken_seconds = request.POST.get('time_taken', '0') if request.method == 'POST' else '0'
+    minutes = int(float(time_taken_seconds)) // 60
+    seconds = int(float(time_taken_seconds)) % 60
     time_str = f'{minutes}m {seconds}s'
 
-    if not solved_grid:
-        return render(request, 'solve.html', {'id': id, 'error': 'Unsolvable!'})
+    if not solved_grid :
+        return render(request, 'solve.html', {'id' :id, 'error' :'Unsolvable!'})
 
     return render(request, 'solved.html', {
-        'grid': solved_grid,
-        'original': grid_obj,
-        'time_spent': time_str
+        'grid' :solved_grid,
+        'original' :grid_obj,
+        'time_spent' :time_str
     })
 
 
