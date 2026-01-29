@@ -21,18 +21,162 @@
             </div>
         {% endfor %}
     {% endif %}
+
     <div class="container" align="center">
-        <form method="POST" action="{% url 'new' %}">
+        <div class="alert alert-info d-inline-block mt-3">
+            <h5 class="mb-0">Cells Filled: <span id="cell-count">0/81</span></h5>
+        </div>
+
+        <div id="validation-message" class="mt-3 mb-3" style="min-height: 50px;"></div>
+
+        <form method="POST" action="{% url 'new' %}" id="new-puzzle-form">
             {% csrf_token %}
 
             <div class="row justify-content-center">
                 <div class="col-md-4">
                     <label>Set Difficulty Level:</label>
-                    {{ form.difficulty }} </div>
+                    {{ form.difficulty }}
+                </div>
             </div>
 
-            {% include 'insert.html' %}
+            <br>
 
-            </form>
+            <table class="board">
+                <tr>
+                    <td class="first_index"></td>
+                    {% for i in "123456789" %}
+                        <td class="top_index">{{ i }}</td>
+                    {% endfor %}
+                </tr>
+
+                {% for row_char in "ABCDEFGHI" %}
+                <tr>
+                    <td class="left_index">{{ row_char }}</td>
+                    {% for col_num in "123456789" %}
+                        {% with field_name=row_char|add:col_num %}
+                            <td class="{% if col_num in '36' %}right{% endif %} {% if row_char in 'CF' %}bottom{% endif %} {% if col_num in '36' and row_char in 'CF' %}rb{% endif %}">
+                                {{ form|get_field:field_name }}
+                            </td>
+                        {% endwith %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </table>
+            <br>
+            <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">Create Puzzle</button>
+        </form>
     </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        let validationTimeout;
+        let isValid = false;
+        const validationUrl = "{% url 'validate_grid' %}";
+        const csrfToken = $('[name=csrfmiddlewaretoken]').val();
+
+        $(document).ready(function() {
+            const $cells = $('.cell');
+
+            $cells.on('input', function() {
+                this.value = this.value.replace(/[^1-9]/g, '');
+
+                updateCellCount();
+
+                clearTimeout(validationTimeout);
+                validationTimeout = setTimeout(validateGrid, 400);
+            });
+
+            $('#new-puzzle-form').on('submit', function(e) {
+                const filledCount = $cells.filter(function() { return this.value; }).length;
+
+                if (filledCount < 17) {
+                    e.preventDefault();
+                    showMessage('A valid Sudoku puzzle needs at least 17 filled cells!', 'warning');
+                    return false;
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                    showMessage('Please fix the duplicate errors before submitting', 'danger');
+                    validateGrid();
+                    return false;
+                }
+            });
+
+            updateCellCount();
+        });
+
+        function updateCellCount() {
+            const filledCount = $('.cell').filter(function() { return this.value; }).length;
+            $('#cell-count').text(filledCount + '/81');
+        }
+
+        function validateGrid() {
+            const gridData = {};
+            $('.cell').each(function() {
+                if (this.name) {
+                    gridData[this.name] = this.value || '';
+                }
+            });
+
+            $.ajax({
+                url: validationUrl,
+                method: 'POST',
+                contentType: 'application/json',
+                headers: {'X-CSRFToken': csrfToken},
+                data: JSON.stringify({grid_data: gridData}),
+                success: function(response) {
+                    // Clear previous highlights
+                    $('.cell').removeClass('is-invalid is-valid');
+                    $('td').removeClass('is-invalid is-valid');
+
+                    if (response.duplicates.length > 0) {
+                        // Mark duplicates
+                        response.duplicates.forEach(function(cellKey) {
+                            const $cell = $('[name="' + cellKey + '"]');
+                            if ($cell.val()) {
+                                $cell.addClass('is-invalid');
+                                $cell.closest('td').addClass('is-invalid');
+                            }
+                        });
+                        isValid = false;
+                    } else {
+                        // Mark valid cells
+                        $('.cell').each(function() {
+                            if (this.value) {
+                                $(this).addClass('is-valid');
+                                $(this).closest('td').addClass('is-valid');
+                            }
+                        });
+                        isValid = true;
+                    }
+
+                    // Show message
+                    if (response.message) {
+                        const type = response.is_valid && response.has_minimum ? 'success' :
+                                   response.is_valid ? 'info' : 'danger';
+                        showMessage(response.message, type);
+                    } else {
+                        clearMessage();
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Validation error:', xhr.responseText);
+                }
+            });
+        }
+
+        function showMessage(text, type) {
+            $('#feedback-message').html(
+                '<div class="alert alert-' + type + '" role="alert">' +
+                text +
+                '</div>'
+            );
+            setTimeout(clearMessage, 1000);
+        }
+
+        function clearMessage() {
+            $('#validation-message').html('');
+        }
+    </script>
 {% endblock %}

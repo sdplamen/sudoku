@@ -15,103 +15,145 @@
     <div class="alert alert-dark d-inline-block mt-3">
         <h4 class="mb-0">Time: <span id="timer">00:00</span></h4>
     </div>
-    <div id="api-message-container" class="mt-3" style="min-height: 50px;"></div>
-{#    <form method="POST" id="sudoku-form">#}
-{#        <input type="hidden" name="time_taken" id="time_taken_input" value="0">#}
-{#        {% csrf_token %}#}
-{#        {% include 'insert.html' %}#}
-{##}
-{#        <div class="mt-3">#}
-{#            <a href="{% url 'solved' id=id %}" class="btn btn-primary btn-lg">Solve Board</a>#}
-{#        </div>#}
-{#    </form>#}
-    <form method="POST">
+
+{#    <div class="alert alert-info d-inline-block mt-3 ms-3">#}
+{#        <h5 class="mb-0">Progress: <span id="progress">0/81</span></h5>#}
+{#    </div>#}
+
+    <div id="feedback-message" class="mt-3" style="min-height: 50px;"></div>
+
+    <form method="POST" action="{% url 'solved' id=id %}" id="solution-form">
         {% csrf_token %}
         <input type="hidden" name="time_taken" id="time_taken_input" value="0">
 
-        {% include 'insert.html' %}
+        {% include 'grid.html' %}
 
         <div class="mt-4">
-            <button type="button" onclick="checkProgress('{{ id }}')" class="btn btn-warning">
-                Check My Work (API)
-            </button>
-
-            <a href="{% url 'solved' id=id %}" class="btn btn-primary">
+            <button type="submit" class="btn btn-primary btn-lg">
                 Give Me Solution
-            </a>
+            </button>
         </div>
     </form>
   </div>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         let seconds = 0;
-        let timerDisplay = document.getElementById('timer');
+        let timerInterval;
+        let checkTimeout;
+        const validationUrl = "{% url 'validate_solution' id=id %}";
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
+        // Timer logic - START IMMEDIATELY
         function updateTimer() {
             seconds++;
             let mins = Math.floor(seconds / 60);
             let secs = seconds % 60;
-            let displayMins = mins < 10 ? '0' + mins : mins;
-            let displaySecs = secs < 10 ? '0' + secs : secs;
-
-            timerDisplay.innerText = displayMins + ":" + displaySecs;
+            $('#timer').text(
+                (mins < 10 ? '0' + mins : mins) + ':' +
+                (secs < 10 ? '0' + secs : secs)
+            );
+            $('#time_taken_input').val(seconds);
         }
-        setInterval(updateTimer, 1000);
 
-        async function checkProgress(puzzleId) {
-            const messageContainer = document.getElementById('api-message-container');
-            const inputs = document.querySelectorAll('.cell');
-            let userData = {};
+        // Start the timer immediately
+        timerInterval = setInterval(updateTimer, 1000);
 
-            inputs.forEach(input => {
-                if (input.value) { userData[input.name] = input.value; }
+        // Update time before form submission
+        $('#solution-form').on('submit', function() {
+            $('#time_taken_input').val(seconds);
+        });
+
+        // Auto-validation
+        $(document).ready(function() {
+            const $cells = $('.cell');
+
+            $cells.on('input', function() {
+                this.value = this.value.replace(/[^1-9]/g, '');
+
+                clearTimeout(checkTimeout);
+                checkTimeout = setTimeout(validateSolution, 600);
             });
 
-            try {
-                const response = await fetch(`/api/puzzles/${puzzleId}/solve/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    },
-                    body: JSON.stringify({ grid_input: userData, reveal: false })
-                });
+            // Initial progress update
+            updateProgress();
+        });
 
-                const result = await response.json();
+        function validateSolution() {
+            const userInput = {};
+            $('.cell').each(function() {
+                if (this.name) {
+                    userInput[this.name] = this.value || '';
+                }
+            });
 
-                messageContainer.innerHTML = '';
-                document.querySelectorAll('td').forEach(td => td.classList.remove('is-invalid'));
+            $.ajax({
+                url: validationUrl,
+                method: 'POST',
+                contentType: 'application/json',
+                headers: {'X-CSRFToken': csrfToken},
+                data: JSON.stringify({user_input: userInput}),
+                success: function(response) {
+                    // Clear previous highlights
+                    $('.cell').removeClass('is-invalid is-correct initial-cell');
+                    $('td').removeClass('is-invalid is-correct');
 
-                if (result.wrong_cells.length > 0) {
-                    result.wrong_cells.forEach(cellKey => {
-                        const inputElement = document.querySelector(`[name="${cellKey}"]`);
-                        if (inputElement) {
-                            inputElement.closest('td').classList.add('is-invalid');
-                        }
+                    // Mark initial cells
+                    response.initial_cells.forEach(function(cellKey) {
+                        $('[name="' + cellKey + '"]').addClass('initial-cell');
                     });
-                    showMessage("Some numbers are incorrect. Keep trying!", "danger");
-                }
-                else if (result.is_correct) {
-                    showMessage("Amazing! You solved the puzzle correctly!", "success");
-                }
-                else {
-                    showMessage("Everything looks good so far! Keep going.", "info");
-                }
 
-            } catch (error) {
-                showMessage("Connection error. Is the server running?", "warning");
+                    // Mark wrong cells
+                    response.wrong_cells.forEach(function(cellKey) {
+                        const $cell = $('[name="' + cellKey + '"]');
+                        $cell.addClass('is-invalid');
+                        $cell.closest('td').addClass('is-invalid');
+                    });
+
+                    // Mark correct cells
+                    response.correct_cells.forEach(function(cellKey) {
+                        const $cell = $('[name="' + cellKey + '"]');
+                        $cell.addClass('is-correct');
+                        $cell.closest('td').addClass('is-correct');
+                    });
+
+                    // Update progress
+                    updateProgress(response.filled_count);
+
+                    // Show message
+                    if (response.message) {
+                        const type = response.is_complete ? 'success' :
+                                   response.wrong_cells.length > 0 ? 'danger' : 'info';
+                        showMessage(response.message, type);
+                    } else {
+                        clearMessage();
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Validation error:', xhr.responseText);
+                }
+            });
+        }
+
+        function updateProgress(count) {
+            if (count === undefined) {
+                // Count manually if not provided
+                count = $('.cell').filter(function() { return this.value; }).length;
             }
+            $('#progress').text(count + '/81');
         }
 
         function showMessage(text, type) {
-            const container = document.getElementById('api-message-container');
-            container.innerHTML = `
-                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                    ${text}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            `;
+            $('#feedback-message').html(
+                '<div class="alert alert-' + type + '" role="alert">' +
+                text +
+                '</div>'
+            );
+            setTimeout(clearMessage, 1000);
         }
-    }
+
+        function clearMessage() {
+            $('#feedback-message').html('');
+        }
     </script>
 {% endblock %}

@@ -1,11 +1,165 @@
+import json
+
 from django.contrib import messages
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_http_methods
+
 from .models import Grid
 from .forms import SudokuForm, LevelForm
 from .sudoku import solve, is_valid_input
 from random import choice
 
 
+@require_http_methods(["POST"])
+def validate_grid_input(request) :
+    try:
+        data = json.loads(request.body)
+        grid_data = data.get('grid_data', {})
+
+        grid_dict = {}
+        rows = 'ABCDEFGHI'
+        cols = '123456789'
+
+        for r in rows :
+            for c in cols :
+                key = f"{r}{c}"
+                value = grid_data.get(key, '.')
+                grid_dict[key] = value if value else '.'
+
+        duplicates = []
+        filled_count = 0
+
+        for row in rows :
+            seen = {}
+            for col in cols :
+                key = f"{row}{col}"
+                value = grid_dict[key]
+                if value != '.' :
+                    filled_count += 1
+                    if value in seen :
+                        duplicates.append(key)
+                        duplicates.append(seen[value])
+                    else :
+                        seen[value] = key
+
+        for col in cols :
+            seen = {}
+            for row in rows :
+                key = f"{row}{col}"
+                value = grid_dict[key]
+                if value != '.' :
+                    if value in seen :
+                        if key not in duplicates :
+                            duplicates.append(key)
+                        if seen[value] not in duplicates :
+                            duplicates.append(seen[value])
+                    else :
+                        seen[value] = key
+
+        block_rows = [['A', 'B', 'C'], ['D', 'E', 'F'], ['G', 'H', 'I']]
+        block_cols = [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9']]
+
+        for block_row in block_rows :
+            for block_col in block_cols :
+                seen = {}
+                for row in block_row :
+                    for col in block_col :
+                        key = f"{row}{col}"
+                        value = grid_dict[key]
+                        if value != '.' :
+                            if value in seen :
+                                if key not in duplicates :
+                                    duplicates.append(key)
+                                if seen[value] not in duplicates :
+                                    duplicates.append(seen[value])
+                            else :
+                                seen[value] = key
+
+        duplicates = list(set(duplicates))
+
+        is_valid = len(duplicates) == 0
+        has_minimum = filled_count >= 17
+
+        return JsonResponse({
+            'is_valid' :is_valid,
+            'duplicates' :duplicates,
+            'filled_count' :filled_count,
+            'has_minimum' :has_minimum,
+            'message' :get_validation_message(is_valid, filled_count, len(duplicates))
+        })
+
+    except Exception as e :
+        return JsonResponse({'error' :str(e)}, status=400)
+
+
+@require_http_methods(["POST"])
+def validate_solution_progress(request, id) :
+    try:
+        grid_obj = get_object_or_404(Grid, pk=id)
+        solution = solve(grid_obj.grid)
+
+        if not solution :
+            return JsonResponse({'error' :'Cannot solve puzzle'}, status=400)
+
+        data = json.loads(request.body)
+        user_input = data.get('user_input', {})
+
+        initial_cells = []
+        rows, cols = "ABCDEFGHI", "123456789"
+        for i, char in enumerate(grid_obj.grid) :
+            if char != '.' :
+                field_name = f"{rows[i // 9]}{cols[i % 9]}"
+                initial_cells.append(field_name)
+
+        wrong_cells = []
+        correct_cells = []
+        filled_count = 0
+
+        for key in solution.keys() :
+            user_val = user_input.get(key, '')
+
+            if user_val :
+                filled_count += 1
+                if key not in initial_cells :
+                    if user_val != solution[key] :
+                        wrong_cells.append(key)
+                    else :
+                        correct_cells.append(key)
+
+        is_complete = filled_count == 81 and len(wrong_cells) == 0
+
+        return JsonResponse({
+            'wrong_cells' :wrong_cells,
+            'correct_cells' :correct_cells,
+            'initial_cells' :initial_cells,
+            'filled_count' :filled_count,
+            'is_complete' :is_complete,
+            'message' :get_progress_message(len(wrong_cells), is_complete)
+        })
+
+    except Exception as e :
+        return JsonResponse({'error' :str(e)}, status=400)
+
+
+def get_validation_message(is_valid, filled_count, duplicate_count) :
+    if duplicate_count > 0 :
+        return f'⚠️ {duplicate_count} duplicate(s) found! Fix them to continue.'
+    elif is_valid and filled_count >= 17 :
+        return '✓ Grid is valid! Ready to create puzzle.'
+    elif is_valid and filled_count > 0 :
+        return f'Grid valid, but needs {17 - filled_count} more cells (minimum 17)'
+    else :
+        return ''
+
+
+def get_progress_message(wrong_count, is_complete) :
+    if is_complete :
+        return '🎉 Perfect! You solved it correctly!'
+    elif wrong_count > 0 :
+        return f'{wrong_count} incorrect cell(s)'
+    else :
+        return ''
 def start(request):
     if request.method == 'POST':
         level_form = LevelForm(request.POST)
