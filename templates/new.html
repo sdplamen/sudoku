@@ -254,7 +254,7 @@
             closeButton.setAttribute('data-bs-dismiss', 'alert');
             closeButton.setAttribute('aria-label', 'Close');
 
-            alertDiv.appendChild(closeButton);
+            {#alertDiv.appendChild(closeButton);#}
             container.appendChild(alertDiv);
             setTimeout(clearMessage, 1000);
         }
