@@ -67,39 +67,43 @@
         </form>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
         let validationTimeout;
         let isValid = false;
-        const validationUrl = "{% url 'validate_grid' %}";
-        const csrfToken = $('[name=csrfmiddlewaretoken]').val();
+        const rows = 'ABCDEFGHI';
+        const cols = '123456789';
 
-        $(document).ready(function() {
-            const $cells = $('.cell');
+        document.addEventListener('DOMContentLoaded', function() {
+            const cells = document.querySelectorAll('.cell');
+            const submitBtn = document.getElementById('submit-btn');
 
-            $cells.on('input', function() {
-                this.value = this.value.replace(/[^1-9]/g, '');
+            cells.forEach(cell => {
+                cell.addEventListener('input', function(e) {
+                    this.value = this.value.replace(/[^1-9]/g, '');
 
-                updateCellCount();
+                    clearTimeout(validationTimeout);
+                    validationTimeout = setTimeout(() => {
+                        validateGrid();
+                        updateCellCount();
+                    }, 400);
 
-                clearTimeout(validationTimeout);
-                validationTimeout = setTimeout(validateGrid, 400);
+                    updateCellCount();
+                });
             });
 
-            $('#new-puzzle-form').on('submit', function(e) {
-                const filledCount = $cells.filter(function() { return this.value; }).length;
+            document.getElementById('new-puzzle-form').addEventListener('submit', function(e) {
+                const filledCells = Array.from(cells).filter(c => c.value).length;
 
-                if (filledCount < 17) {
+                if (filledCells < 17) {
                     e.preventDefault();
                     showMessage('A valid Sudoku puzzle needs at least 17 filled cells!', 'warning');
-                    return false;
+                    return;
                 }
 
                 if (!isValid) {
                     e.preventDefault();
                     showMessage('Please fix the duplicate errors before submitting', 'danger');
                     validateGrid();
-                    return false;
                 }
             });
 
@@ -107,76 +111,155 @@
         });
 
         function updateCellCount() {
-            const filledCount = $('.cell').filter(function() { return this.value; }).length;
-            $('#cell-count').text(filledCount + '/81');
+            const cells = document.querySelectorAll('.cell');
+            const filledCount = Array.from(cells).filter(c => c.value).length;
+            document.getElementById('cell-count').textContent = `${filledCount}/81`;
         }
 
         function validateGrid() {
-            const gridData = {};
-            $('.cell').each(function() {
-                if (this.name) {
-                    gridData[this.name] = this.value || '';
+            const cells = document.querySelectorAll('.cell');
+            let gridData = {};
+            let hasAnyInput = false;
+
+            cells.forEach(cell => {
+                if (cell.name) {
+                    gridData[cell.name] = cell.value || '.';
+                    if (cell.value) hasAnyInput = true;
                 }
             });
 
-            $.ajax({
-                url: validationUrl,
-                method: 'POST',
-                contentType: 'application/json',
-                headers: {'X-CSRFToken': csrfToken},
-                data: JSON.stringify({grid_data: gridData}),
-                success: function(response) {
-                    // Clear previous highlights
-                    $('.cell').removeClass('is-invalid is-valid');
-                    $('td').removeClass('is-invalid is-valid');
-
-                    if (response.duplicates.length > 0) {
-                        // Mark duplicates
-                        response.duplicates.forEach(function(cellKey) {
-                            const $cell = $('[name="' + cellKey + '"]');
-                            if ($cell.val()) {
-                                $cell.addClass('is-invalid');
-                                $cell.closest('td').addClass('is-invalid');
-                            }
-                        });
-                        isValid = false;
-                    } else {
-                        // Mark valid cells
-                        $('.cell').each(function() {
-                            if (this.value) {
-                                $(this).addClass('is-valid');
-                                $(this).closest('td').addClass('is-valid');
-                            }
-                        });
-                        isValid = true;
-                    }
-
-                    // Show message
-                    if (response.message) {
-                        const type = response.is_valid && response.has_minimum ? 'success' :
-                                   response.is_valid ? 'info' : 'danger';
-                        showMessage(response.message, type);
-                    } else {
-                        clearMessage();
-                    }
-                },
-                error: function(xhr) {
-                    console.error('Validation error:', xhr.responseText);
-                }
+            // Clear previous highlights
+            cells.forEach(cell => {
+                cell.classList.remove('is-invalid', 'is-valid');
+                cell.closest('td').classList.remove('is-invalid', 'is-valid');
             });
+
+            if (!hasAnyInput) {
+                clearMessage();
+                isValid = true;
+                return;
+            }
+
+            let duplicates = findDuplicates(gridData);
+
+            if (duplicates.length > 0) {
+                // Highlight all cells involved in duplicates
+                duplicates.forEach(cellKey => {
+                    const inputElement = document.querySelector(`[name="${cellKey}"]`);
+                    if (inputElement && inputElement.value) {
+                        inputElement.classList.add('is-invalid');
+                        inputElement.closest('td').classList.add('is-invalid');
+                    }
+                });
+
+                showMessage(`⚠️ ${duplicates.length} duplicate(s) found! Fix them to continue.`, 'danger');
+                isValid = false;
+            } else {
+                // Mark all filled cells as valid
+                cells.forEach(cell => {
+                    if (cell.value) {
+                        cell.classList.add('is-valid');
+                        cell.closest('td').classList.add('is-valid');
+                    }
+                });
+
+                const filledCount = Array.from(cells).filter(c => c.value).length;
+                if (filledCount >= 17) {
+                    showMessage('✓ Grid is valid! Ready to create puzzle.', 'success');
+                } else {
+                    showMessage(`Grid valid, but needs ${17 - filledCount} more cells (minimum 17)`, 'info');
+                }
+                isValid = true;
+            }
+        }
+
+        function findDuplicates(gridData) {
+            let duplicates = new Set();
+
+            // Check rows
+            for (let row of rows) {
+                let seen = {};
+                for (let col of cols) {
+                    let key = row + col;
+                    let value = gridData[key];
+                    if (value !== '.') {
+                        if (seen[value]) {
+                            duplicates.add(key);
+                            duplicates.add(seen[value]);
+                        } else {
+                            seen[value] = key;
+                        }
+                    }
+                }
+            }
+
+            // Check columns
+            for (let col of cols) {
+                let seen = {};
+                for (let row of rows) {
+                    let key = row + col;
+                    let value = gridData[key];
+                    if (value !== '.') {
+                        if (seen[value]) {
+                            duplicates.add(key);
+                            duplicates.add(seen[value]);
+                        } else {
+                            seen[value] = key;
+                        }
+                    }
+                }
+            }
+
+            // Check 3x3 blocks
+            const blockRows = [['A','B','C'], ['D','E','F'], ['G','H','I']];
+            const blockCols = [['1','2','3'], ['4','5','6'], ['7','8','9']];
+
+            for (let blockRow of blockRows) {
+                for (let blockCol of blockCols) {
+                    let seen = {};
+                    for (let row of blockRow) {
+                        for (let col of blockCol) {
+                            let key = row + col;
+                            let value = gridData[key];
+                            if (value !== '.') {
+                                if (seen[value]) {
+                                    duplicates.add(key);
+                                    duplicates.add(seen[value]);
+                                } else {
+                                    seen[value] = key;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return Array.from(duplicates);
         }
 
         function showMessage(text, type) {
-            $('#feedback-message').html(
-                '<div class="alert alert-' + type + '" role="alert">' +
-                text +
-                '</div>'
-            );
-            setTimeout(clearMessage, 1000);
+            const container = document.getElementById('validation-message');
+            container.innerHTML = '';
+
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.setAttribute('role', 'alert');
+
+            const textNode = document.createTextNode(text);
+            alertDiv.appendChild(textNode);
+
+            const closeButton = document.createElement('button');
+            closeButton.type = 'button';
+            closeButton.className = 'btn-close';
+            closeButton.setAttribute('data-bs-dismiss', 'alert');
+            closeButton.setAttribute('aria-label', 'Close');
+
+            alertDiv.appendChild(closeButton);
+            container.appendChild(alertDiv);
         }
 
         function clearMessage() {
-            $('#validation-message').html('');
+            document.getElementById('validation-message').innerHTML = '';
         }
     </script>
 {% endblock %}
