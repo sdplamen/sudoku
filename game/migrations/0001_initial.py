@@ -16,7 +16,7 @@ class Migration(migrations.Migration):
             name='Grid',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('grid', models.CharField(max_length=81)),
+                ('grid', models.IntegerField()),
                 ('difficulty', models.CharField(default='easy', max_length=10)),
                 ('source', models.CharField(default='Unknown', max_length=255)),
                 ('date', models.DateField(default=django.utils.timezone.now)),

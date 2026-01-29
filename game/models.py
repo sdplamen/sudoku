@@ -4,7 +4,7 @@ from django.utils import timezone
 # Create your models here.
 class Grid(models.Model):
 
-    grid = models.CharField(max_length=81)
+    grid = models.IntegerField()
     difficulty = models.CharField(max_length=10, default='easy')
     source = models.CharField(max_length=255, default='Unknown')
     date = models.DateField(default=timezone.now)
