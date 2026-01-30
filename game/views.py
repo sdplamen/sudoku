@@ -219,8 +219,8 @@ def to_solve(request, id):
     grid_obj = get_object_or_404(Grid, pk=id)
     initial_data = {}
     rows, cols = "ABCDEFGHI", "123456789"
-    for i, char in enumerate(grid_obj.grid): 
-        if char != '':
+    for i, char in enumerate(grid_obj.grid):
+        if char != '.' and char != '' :
             field_name = f"{rows[i // 9]}{cols[i % 9]}"
             initial_data[field_name] = char
     form = SudokuForm(initial=initial_data)

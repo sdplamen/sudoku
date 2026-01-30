@@ -1,31 +1,23 @@
 {% load form_extras %}
 
 <table class="board" align="center">
+    <tr>
+        <td class="first_index"></td>
+        {% for i in "123456789" %}
+            <td class="top_index">{{ i }}</td>
+        {% endfor %}
+    </tr>
+
     {% for row in "ABCDEFGHI" %}
     <tr>
+        <td class="left_index">{{ row }}</td>
         {% for col in "123456789" %}
             {% with key=row|add:col %}
-{#            <td class="cell-container {% if col in '36' %}right{% endif %} {% if row in 'CF' %}bottom{% endif %}">#}
-{#                {% if form %}#}
-{#                    {% with field=form|get_field:key %}#}
-{#                        <div class="{% if key in wrong_cells %}is-invalid{% endif %}">#}
-{#                            {{ field }}#}
-{#                        </div>#}
-{#                    {% endwith %}#}
-{#                {% else %}#}
-{#                    <div class="cell">#}
-{#                        {{ grid|get_item:key|default:"" }}#}
-{#                    </div>#}
-{#                {% endif %}#}
             <td class="{% if col in '36' %}right{% endif %} {% if row in 'CF' %}bottom{% endif %}">
-                {% if form %}
-                    {# Display form field (for solve.html) #}
-                    {% with field=form|get_field:key %}
-                        {{ field }}
-                    {% endwith %}
-                {% elif grid %}
-                    {# Display solved value (for solved.html) #}
-                    <input type="text" class="cell" value="{{ grid|get_item:key }}" readonly>
+                {% if grid %}
+                    <input type="text" class="cell initial-cell" value="{{ grid|get_item:key }}" readonly>
+                {% elif form %}
+                    {{ form|get_field:key }}
                 {% endif %}
             </td>
             {% endwith %}

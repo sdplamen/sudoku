@@ -13,25 +13,36 @@ class LevelForm(forms.Form) :
     )
 
 
-class SudokuForm(forms.Form):
+class SudokuForm(forms.Form) :
     difficulty = forms.ChoiceField(
         choices=[('easy', 'Easy'), ('medium', 'Medium'), ('hard', 'Hard')],
-        widget=forms.Select(attrs={'class': 'form-control mb-3'})
+        widget=forms.Select(attrs={'class' :'form-control mb-3'})
     )
-    def __init__(self, *args, **kwargs):
+
+    def __init__(self, *args, **kwargs) :
         super(SudokuForm, self).__init__(*args, **kwargs)
         rows = 'ABCDEFGHI'
         cols = '123456789'
-        for r in rows:
-            for c in cols:
+
+        for r in rows :
+            for c in cols :
                 field_name = f'{r}{c}'
                 self.fields[field_name] = forms.CharField(
                     widget=forms.TextInput(attrs={
-                        'class' : 'cell',
-                        'maxlength': '1',
-                        'inputmode': 'numeric',
-                        # 'pattern': '[1-9]',
-                        'autocomplete': 'off'
+                        'class' :'cell',
+                        'maxlength' :'1',
+                        'inputmode' :'numeric',
+                        'pattern' :'[1-9]',
+                        'autocomplete' :'off',
                     }),
                     required=False
                 )
+
+        if self.initial :
+            for field_name, value in self.initial.items() :
+                if field_name in self.fields and value and value != '.' :
+                    # Update the widget attributes to make it readonly
+                    self.fields[field_name].widget.attrs.update({
+                        'class' :'cell initial-cell',
+                        'readonly' :'readonly'
+                    })

@@ -120,10 +120,19 @@
                     // Update progress
                     updateProgress(response.filled_count);
 
-                    // Show message
-                    if (response.message) {
-                        const type = response.is_complete ? 'success' :
-                                   response.wrong_cells.length > 0 ? 'danger' : 'info';
+                    // Check if puzzle is complete and correct
+                    if (response.is_complete) {
+                        showMessage('🎉 Perfect! Redirecting to results...', 'success');
+
+                        // Auto-submit the form after 2 seconds
+                        setTimeout(function() {
+                            $('#time_taken_input').val(seconds);
+                            $('#solution-form').submit();
+                        }, 2000);
+                    }
+                    // Show message for wrong cells
+                    else if (response.message) {
+                        const type = response.wrong_cells.length > 0 ? 'danger' : 'info';
                         showMessage(response.message, type);
                     } else {
                         clearMessage();
