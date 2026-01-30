@@ -1,0 +1,55 @@
+{% extends 'index.html' %}
+
+{% block title %}
+    <div class="container text-center">
+      <div class="jumbotron">
+        <h1>Create Account</h1>
+      </div>
+    </div>
+    <br>
+{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <form class="form-horizontal" method="POST" action="{% url 'register' %}">
+                    {% csrf_token %}
+                    <fieldset>
+                        <div class="form-group">
+                            <label for="inputUsername" class="control-label">Username</label>
+                            <input type="text" class="form-control" name="username" id="inputUsername" placeholder="Choose a username" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="inputEmail" class="control-label">Email</label>
+                            <input type="email" class="form-control" name="email" id="inputEmail" placeholder="Your email" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="inputPassword" class="control-label">Password</label>
+                            <input type="password" class="form-control" name="password" id="inputPassword" placeholder="Password" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="inputPasswordConfirm" class="control-label">Confirm Password</label>
+                            <input type="password" class="form-control" name="password_confirm" id="inputPasswordConfirm" placeholder="Confirm password" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary btn-block">Register</button>
+                        </div>
+                        
+                        <div class="text-center">
+                            <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+                        </div>
+                    </fieldset>
+                </form>
+
+                {% if error %}
+                    <div class="alert alert-danger mt-3">{{ error }}</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

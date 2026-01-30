@@ -2,9 +2,29 @@
 
 {% block body %}
 <div class="container" align="center">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
     <div class="jumbotron">
         <h1>Sudoku Game</h1>
         <p>Choose a difficulty to start a random puzzle from our database.</p>
+
+        {% if user.is_authenticated %}
+            <p>Logged as: <strong>{{ user.username }}</strong>
+                <a href="{% url 'logout' %}" class="btn btn-sm btn-danger">Logout</a>
+            </p>
+        {% else %}
+            <p><a href="{% url 'login' %}" class="btn btn-sm btn-primary">Login</a> or
+               <a href="{% url 'register' %}" class="btn btn-sm btn-success">Register</a></p>
+        {% endif %}
     </div>
 
     <form method="POST" action="{% url 'start' %}">
@@ -25,14 +45,21 @@
     <div class="mt-4">
         <p>Or create your own puzzle:</p>
         <a href="{% url 'new' %}" class="btn btn-success">Enter New Grid</a>
+
+        {% if user.is_authenticated %}
+            <a href="{% url 'my_puzzles' %}" class="btn btn-info">My Puzzles</a>
+        {% endif %}
     </div>
+
+    {% if user.is_authenticated %}
     <hr>
     <div class="mt-5 p-3 border border-danger">
-        <h3>Developer Tools</h3>
-        <form method="POST" action="{% url 'clear_grids' %}" onsubmit="return confirm('Are you sure you want to delete all puzzles?');">
+        <h3>Admin Tools</h3>
+        <form method="POST" action="{% url 'clear_grids' %}" onsubmit="return confirm('Are you sure you want to delete ALL puzzles in the database?');">
             {% csrf_token %}
             <button type="submit" class="btn btn-outline-danger">Wipe All Database Records</button>
         </form>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

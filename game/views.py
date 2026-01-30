@@ -1,10 +1,13 @@
 import json
 
 from django.contrib import messages
+from django.contrib.auth import authenticate
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_http_methods
-
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from .models import Grid
 from .forms import SudokuForm, LevelForm
 from .sudoku import solve, is_valid_input
@@ -167,7 +170,7 @@ def start(request):
         level_form = LevelForm(request.POST)
         if level_form.is_valid():
             level = level_form.cleaned_data.get('level').lower()
-            queryset = Grid.objects.filter(difficulty=level)
+            queryset = Grid.objects.filter(difficulty=level, is_public=True)
 
             if queryset.exists():
                 random_grid = choice(queryset)
@@ -201,6 +204,8 @@ def new(request):
             new_grid = Grid.objects.create(
                 grid=grid_string,
                 difficulty=selected_difficulty,
+                created_by=request.user if request.user.is_authenticated else None,
+                is_public=True
             )
             messages.success(request, f"Puzzle created successfully! ID: {new_grid.id}")
             return redirect('to_solve', id=new_grid.id)
@@ -277,6 +282,7 @@ def solved(request, id):
     })
 
 
+@login_required
 def clear_grids(request):
     if request.method == 'POST':
         Grid.objects.all().delete()
@@ -286,11 +292,76 @@ def clear_grids(request):
     return render(request, 'start.html')
 
 
+@login_required
+def delete_puzzle(request, id) :
+    grid_obj = get_object_or_404(Grid, pk=id)
+
+    if grid_obj.created_by != request.user :
+        messages.error(request, 'You can only delete your own puzzles!')
+        return redirect('start')
+
+    if request.method == 'POST' :
+        grid_obj.delete()
+        messages.success(request, f'Puzzle #{id} deleted successfully!')
+        return redirect('my_puzzles')
+
+    return render(request, 'delete.html', {'puzzle' :grid_obj})
+
+def my_puzzles(request):
+    user_puzzles = Grid.objects.filter(created_by=request.user).order_by('-date')
+    return render(request, 'my_puzzles.html', {'puzzles': user_puzzles})
+
+def login_view(request) :
+    if request.method == 'POST' :
+        username = request.POST.get('user')
+        password = request.POST.get('password')
+
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None :
+            auth_login(request, user)
+            messages.success(request, f'Welcome back, {user.username}!')
+            return redirect('start')
+        else :
+            return render(request, 'login.html', {'error' :'Invalid username or password'})
+
+    return render(request, 'login.html')
+
+
+def logout_view(request) :
+    auth_logout(request)
+    messages.success(request, 'You have been logged out successfully!')
+    return redirect('start')
+
+
+def register_view(request) :
+    if request.method == 'POST' :
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        password_confirm = request.POST.get('password_confirm')
+
+        if password != password_confirm :
+            return render(request, 'register.html', {'error' :'Passwords do not match'})
+
+        if User.objects.filter(username=username).exists() :
+            return render(request, 'register.html', {'error' :'Username already exists'})
+
+        if User.objects.filter(email=email).exists() :
+            return render(request, 'register.html', {'error' :'Email already registered'})
+
+        user = User.objects.create_user(username=username, email=email, password=password)
+        auth_login(request, user)
+        messages.success(request, f'Welcome, {user.username}! Your account has been created.')
+        return redirect('start')
+
+    return render(request, 'register.html')
+
+
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import GridSerializer
-
 
 class SudokuListCreateAPI(APIView): 
     # GET: Get a random puzzle by difficulty (Replaces 'start' logic)

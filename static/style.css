@@ -148,6 +148,32 @@ td.is-valid {
     -moz-appearance: textfield;
 }
 
+.jumbotron {
+    background: linear-gradient(135deg, #08458f 0%, #0f3763 100%);
+    color: white;
+    padding: 5rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+}
+
+.card {
+    border-radius: 10px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.shadow-sm {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
     25% { transform: translateX(-5px); }
