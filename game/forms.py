@@ -26,6 +26,12 @@ class SudokuForm(forms.Form):
             for c in cols:
                 field_name = f'{r}{c}'
                 self.fields[field_name] = forms.CharField(
-                    widget=forms.TextInput(attrs={'class': 'cell', 'maxlength': '1'}),
+                    widget=forms.TextInput(attrs={
+                        'class' : 'cell',
+                        'maxlength': '1',
+                        'inputmode': 'numeric',
+                        # 'pattern': '[1-9]',
+                        'autocomplete': 'off'
+                    }),
                     required=False
                 )

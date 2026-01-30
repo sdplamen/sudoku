@@ -138,6 +138,16 @@ td.is-valid {
     transition: all 0.3s ease;
 }
 
+.cell::-webkit-outer-spin-button,
+.cell::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.cell[type=number] {
+    -moz-appearance: textfield;
+}
+
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
     25% { transform: translateX(-5px); }
